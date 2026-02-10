@@ -16,6 +16,12 @@ apply from: 'dependencies.gradle'
 
 tasks.named('jar') {
     from "LICENSE"
+    // Allows the library to be jar-in-jar'd by NeoForge projects
+    manifest {
+        attributes(
+                'FMLModType': 'GAMELIBRARY'
+        )
+    }
 }
 
 tasks.register('sourceJar', Jar) {
