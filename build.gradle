@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+    id 'idea'
+    id 'maven-publish'
+}
+
+version = (System.getenv("VERSION") ?: "0.0.0-local")
+group = app_group_id
+base {
+    archivesName = artifact_name
+}
+
+logger.lifecycle("${app_name} version ${version}")
+
+apply from: 'dependencies.gradle'
+
+tasks.named('jar') {
+    from "LICENSE"
+}
+
+tasks.register('sourceJar', Jar) {
+    archiveClassifier.set("sources")
+    from sourceSets.main.allJava
+    from "LICENSE"
+}
+
+apply from: 'deploy.gradle'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
