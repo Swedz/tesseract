@@ -3,4 +3,5 @@ repositories {
 }
 
 dependencies {
+    compileOnly "com.google.code.gson:gson:${gson_version}"
 }
