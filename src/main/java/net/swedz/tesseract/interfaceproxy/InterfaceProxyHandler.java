@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> implements InvocationHandler
 {
-	private Map<String, E> values = Map.of();
+	private Map<Method, E> values = Map.of();
 	
 	public Optional<Comparator<E>> sorter()
 	{
@@ -31,16 +31,15 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 	
 	final void loadValues(Class<?> proxyClass, Object proxy)
 	{
-		Map<String, E> values = new HashMap<>();
+		Map<Method, E> values = new HashMap<>();
 		
 		for(var method : proxyClass.getMethods())
 		{
-			var methodSignature = method.toGenericString();
 			this.generate(proxyClass, proxy, method).ifPresent((entry) ->
 			{
-				if(values.put(methodSignature, entry) != null)
+				if(values.put(method, entry) != null)
 				{
-					throw new IllegalStateException("Method with signature %s already exists.".formatted(methodSignature));
+					throw new IllegalStateException("Method with signature %s already exists.".formatted(method.toGenericString()));
 				}
 			});
 		}
@@ -58,7 +57,7 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 			METHOD_HASHCODE = Object.class.getDeclaredMethod("hashCode");
 			METHOD_TOSTRING = Object.class.getDeclaredMethod("toString");
 		}
-		catch (NoSuchMethodException ex)
+		catch(NoSuchMethodException ex)
 		{
 			throw new RuntimeException(ex);
 		}
@@ -80,14 +79,14 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 			return proxy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
 		}
 		
-		var value = values.get(method.toGenericString());
+		var value = values.get(method);
 		if(value == null)
 		{
 			try
 			{
 				return InvocationHandler.invokeDefault(proxy, method, args);
 			}
-			catch (Throwable ex)
+			catch(Throwable ex)
 			{
 				throw new RuntimeException(ex);
 			}
