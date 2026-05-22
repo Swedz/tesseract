@@ -64,23 +64,57 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 		}
 	}
 	
-	private static JsonElement getByPath(JsonObject json, String path)
+	private static void writeJson(File file, JsonObject json)
+	{
+		try(var writer = new FileWriter(file))
+		{
+			var gson = new GsonBuilder()
+					.setPrettyPrinting()
+					.create();
+			gson.toJson(json, writer);
+		}
+		catch(IOException ex)
+		{
+			throw new RuntimeException(ex);
+		}
+	}
+	
+	private static JsonObject getObjectContainingValueAtPath(JsonObject json, String path)
 	{
 		var keys = path.split("\\.");
 		
 		JsonElement current = json;
+		JsonObject last = null;
 		for(var key : keys)
 		{
 			if(current != null && current.isJsonObject())
 			{
-				current = current.getAsJsonObject().get(key);
+				last = current.getAsJsonObject();
+				current = last.get(key);
 			}
 			else
 			{
 				return null;
 			}
 		}
-		return current;
+		return last;
+	}
+	
+	private static JsonElement getByPath(JsonObject json, String path)
+	{
+		var keys = path.split("\\.");
+		var object = getObjectContainingValueAtPath(json, path);
+		return object != null ? object.get(keys[keys.length - 1]) : null;
+	}
+	
+	private static void setByPath(JsonObject json, String path, JsonElement value)
+	{
+		var keys = path.split("\\.");
+		var object = getObjectContainingValueAtPath(json, path);
+		if(object != null)
+		{
+			object.add(keys[keys.length - 1], value);
+		}
 	}
 	
 	@Override
@@ -105,16 +139,21 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 					key = NamingConventionHelper.fromCamelCaseToSnakeCase(method);
 				}
 				var path = (parentPath.isEmpty() ? "" : (parentPath + ".")) + key;
-				var type = method.getReturnType();
+				var returnType = method.getReturnType();
+				
+				if(returnType == void.class)
+				{
+					continue;
+				}
 				
 				JsonElement value;
 				if(method.isAnnotationPresent(SubSection.class))
 				{
-					value = this.buildDefaults(type, path);
+					value = this.buildDefaults(returnType, path);
 				}
 				else
 				{
-					Transcoder codec = codecs.get(type);
+					Transcoder codec = codecs.get(returnType);
 					Object defaultValue;
 					try
 					{
@@ -173,17 +212,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 			json = defaultJson;
 		}
 		
-		try(var writer = new FileWriter(file))
-		{
-			var gson = new GsonBuilder()
-					.setPrettyPrinting()
-					.create();
-			gson.toJson(json, writer);
-		}
-		catch(IOException ex)
-		{
-			throw new RuntimeException(ex);
-		}
+		writeJson(file, json);
 	}
 	
 	@Override
@@ -199,5 +228,16 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 		}
 		
 		return null;
+	}
+	
+	@Override
+	public void set(Class<?> type, String path, Object value)
+	{
+		Assert.notNull(json, "Config file has not yet been loaded", IllegalStateException::new);
+		
+		var codec = (Transcoder<Object, JsonElement>) codecs.get(type);
+		setByPath(json, path, codec.encode(value));
+		
+		writeJson(file, json);
 	}
 }

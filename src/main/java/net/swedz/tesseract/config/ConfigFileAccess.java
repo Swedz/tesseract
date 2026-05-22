@@ -7,4 +7,6 @@ public interface ConfigFileAccess<D>
 	void load(Class<?> proxyClass);
 	
 	Object get(Class<?> type, String path);
+	
+	void set(Class<?> type, String path, Object value);
 }

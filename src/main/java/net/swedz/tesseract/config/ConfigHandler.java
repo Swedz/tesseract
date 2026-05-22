@@ -2,12 +2,14 @@ package net.swedz.tesseract.config;
 
 import net.swedz.tesseract.config.annotation.ConfigKey;
 import net.swedz.tesseract.config.annotation.SubSection;
+import net.swedz.tesseract.config.exception.IllegalConfigMethodException;
 import net.swedz.tesseract.helper.NamingConventionHelper;
 import net.swedz.tesseract.interfaceproxy.InterfaceProxyHandler;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
@@ -51,6 +53,11 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 		};
 	}
 	
+	private Object editValue(Class<?> type, String path)
+	{
+		return (Consumer<Object>) (value) -> manager.file().set(type, path, value);
+	}
+	
 	@Override
 	protected Optional<ConfigEntry> generate(Class<?> proxyClass, Object proxy, Method method)
 	{
@@ -62,16 +69,25 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 				key = NamingConventionHelper.fromCamelCaseToSnakeCase(method);
 			}
 			var path = this.path(key);
-			var type = method.getReturnType();
+			var returnType = method.getReturnType();
 			
 			Object value;
-			if(method.isAnnotationPresent(SubSection.class))
+			if(returnType == void.class)
 			{
-				value = manager.build(type, new ConfigManagerArg(path)).load(false);
+				if(method.getParameterCount() != 1)
+				{
+					throw new IllegalConfigMethodException("Cannot have void config setter method without exactly one parameter");
+				}
+				var parameterType = method.getParameterTypes()[0];
+				value = this.editValue(parameterType, path);
+			}
+			else if(method.isAnnotationPresent(SubSection.class))
+			{
+				value = manager.build(returnType, new ConfigManagerArg(path)).load(false);
 			}
 			else
 			{
-				value = this.loadValue(proxy, method, type, path);
+				value = this.loadValue(proxy, method, returnType, path);
 			}
 			return Optional.of(new ConfigEntry(value));
 		}
