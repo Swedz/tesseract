@@ -63,7 +63,7 @@ public class ConfigCodecMap<D>
 	public <T> T decode(Class<T> type, D value)
 	{
 		var codec = codecs.get(type);
-		return (T) codec.decode(ops, value).getOrThrow();
+		return (T) codec.decode(ops, value).getOrThrow().getFirst();
 	}
 	
 	public D encode(Class<?> type, Object value)

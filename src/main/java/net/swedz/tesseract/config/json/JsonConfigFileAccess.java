@@ -208,7 +208,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 		var element = getByPath(json, path);
 		if(element != null)
 		{
-			return codecs.encode(type, element);
+			return codecs.decode(type, element);
 		}
 		
 		return null;
