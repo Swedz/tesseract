@@ -1,7 +1,17 @@
 repositories {
     mavenCentral()
+
+    maven {
+        name = "Mojang"
+        url = "https://libraries.minecraft.net"
+        content {
+            // DataFixerUpper
+            includeGroup "com.mojang"
+        }
+    }
 }
 
 dependencies {
     compileOnly "com.google.code.gson:gson:${gson_version}"
+    compileOnly "com.mojang:datafixerupper:${dfu_version}"
 }

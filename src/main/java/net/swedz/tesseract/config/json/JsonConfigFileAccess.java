@@ -4,15 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.mojang.serialization.JsonOps;
 import net.swedz.tesseract.config.ConfigFileAccess;
-import net.swedz.tesseract.config.ConfigTranscoderMap;
+import net.swedz.tesseract.config.ConfigCodecMap;
 import net.swedz.tesseract.config.DefaultValueConfigHandler;
 import net.swedz.tesseract.config.annotation.ConfigKey;
 import net.swedz.tesseract.config.annotation.SubSection;
 import net.swedz.tesseract.api.Assert;
-import net.swedz.tesseract.api.InlineTranscoder;
-import net.swedz.tesseract.api.Transcoder;
 import net.swedz.tesseract.helper.NamingConventionHelper;
 
 import java.io.File;
@@ -24,7 +22,7 @@ import java.lang.reflect.Proxy;
 
 public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 {
-	private final ConfigTranscoderMap<JsonElement> codecs = new ConfigTranscoderMap<>();
+	private final ConfigCodecMap<JsonElement> codecs = new ConfigCodecMap(JsonOps.INSTANCE);
 	
 	private final File file;
 	
@@ -36,19 +34,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 		
 		this.file = file;
 		
-		codecs.register(String.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsString));
-		codecs.register(boolean.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsBoolean));
-		codecs.register(Boolean.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsBoolean));
-		codecs.register(int.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsInt));
-		codecs.register(Integer.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsInt));
-		codecs.register(long.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsLong));
-		codecs.register(Long.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsLong));
-		codecs.register(double.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsDouble));
-		codecs.register(Double.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsDouble));
-		codecs.register(float.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsFloat));
-		codecs.register(Float.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsFloat));
-		codecs.register(short.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsShort));
-		codecs.register(Short.class, new InlineTranscoder<>(JsonPrimitive::new, JsonElement::getAsShort));
+		codecs.builtinCodecs();
 	}
 	
 	private static JsonObject readJson(File file)
@@ -118,7 +104,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 	}
 	
 	@Override
-	public ConfigTranscoderMap<JsonElement> codecs()
+	public ConfigCodecMap<JsonElement> codecs()
 	{
 		return codecs;
 	}
@@ -153,7 +139,6 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 				}
 				else
 				{
-					Transcoder codec = codecs.get(returnType);
 					Object defaultValue;
 					try
 					{
@@ -163,7 +148,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 					{
 						throw new RuntimeException(ex);
 					}
-					value = (JsonElement) codec.encode(defaultValue);
+					value = codecs.encode(returnType, defaultValue);
 				}
 				
 				json.add(key, value);
@@ -223,8 +208,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 		var element = getByPath(json, path);
 		if(element != null)
 		{
-			var codec = codecs.get(type);
-			return codec.decode(element);
+			return codecs.encode(type, element);
 		}
 		
 		return null;
@@ -235,8 +219,7 @@ public final class JsonConfigFileAccess implements ConfigFileAccess<JsonElement>
 	{
 		Assert.notNull(json, "Config file has not yet been loaded", IllegalStateException::new);
 		
-		var codec = (Transcoder<Object, JsonElement>) codecs.get(type);
-		setByPath(json, path, codec.encode(value));
+		setByPath(json, path, codecs.encode(type, value));
 		
 		writeJson(file, json);
 	}
