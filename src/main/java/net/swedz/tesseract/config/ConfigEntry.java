@@ -3,6 +3,7 @@ package net.swedz.tesseract.config;
 import net.swedz.tesseract.interfaceproxy.InterfaceProxyEntry;
 import net.swedz.tesseract.interfaceproxy.InterfaceProxyInstance;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public record ConfigEntry(
@@ -19,6 +20,11 @@ public record ConfigEntry(
 		else if(value instanceof Supplier<?> supplier)
 		{
 			return supplier.get();
+		}
+		else if(value instanceof Consumer consumer)
+		{
+			consumer.accept(args[0]);
+			return null;
 		}
 		return value;
 	}

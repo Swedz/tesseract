@@ -33,15 +33,15 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 		manager.file().load(proxyClass);
 	}
 	
-	private Object loadValue(Object proxy, Method method, Class<?> type, String path)
+	private Supplier<Object> loadValue(Object proxy, Method method, Class<?> type, String path)
 	{
-		var fileValue = manager.file().get(type, path);
-		if(fileValue != null)
+		return () ->
 		{
-			return fileValue;
-		}
-		return (Supplier<Object>) () ->
-		{
+			var fileValue = manager.file().get(type, path);
+			if(fileValue != null)
+			{
+				return fileValue;
+			}
 			try
 			{
 				return InvocationHandler.invokeDefault(proxy, method);
@@ -53,9 +53,9 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 		};
 	}
 	
-	private Object editValue(Class<?> type, String path)
+	private Consumer<Object> editValue(Class<?> type, String path)
 	{
-		return (Consumer<Object>) (value) -> manager.file().set(type, path, value);
+		return (value) -> manager.file().set(type, path, value);
 	}
 	
 	@Override
