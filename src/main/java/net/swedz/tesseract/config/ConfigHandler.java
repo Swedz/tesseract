@@ -31,6 +31,7 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 	void loadFile(Class<?> proxyClass)
 	{
 		manager.file().load(proxyClass);
+		this.resetCache();
 	}
 	
 	private Supplier<Object> loadValue(Object proxy, Method method, Class<?> type, String path)
@@ -55,7 +56,30 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 	
 	private Consumer<Object> editValue(Class<?> type, String path)
 	{
-		return (value) -> manager.file().set(type, path, value);
+		return (value) ->
+		{
+			manager.file().set(type, path, value);
+			this.resetCache(path);
+		};
+	}
+	
+	void resetCache(String path)
+	{
+		for(var entry : this.entries())
+		{
+			if(entry.path().equals(path))
+			{
+				entry.resetCache();
+			}
+		}
+	}
+	
+	void resetCache()
+	{
+		for(var entry : this.entries())
+		{
+			entry.resetCache();
+		}
 	}
 	
 	@Override
@@ -89,7 +113,7 @@ public final class ConfigHandler extends InterfaceProxyHandler<ConfigEntry>
 			{
 				value = this.loadValue(proxy, method, returnType, path);
 			}
-			return Optional.of(new ConfigEntry(value));
+			return Optional.of(new ConfigEntry(path, value, manager.cachesValues()));
 		}
 		return Optional.empty();
 	}

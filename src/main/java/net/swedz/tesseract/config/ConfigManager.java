@@ -6,6 +6,8 @@ public final class ConfigManager extends InterfaceProxyManager.WithArgument<Conf
 {
 	private final ConfigFileAccess<?> file;
 	
+	private boolean cachesValues = true;
+	
 	public ConfigManager(ConfigFileAccess<?> file)
 	{
 		this.file = file;
@@ -14,6 +16,17 @@ public final class ConfigManager extends InterfaceProxyManager.WithArgument<Conf
 	ConfigFileAccess<?> file()
 	{
 		return file;
+	}
+	
+	public boolean cachesValues()
+	{
+		return cachesValues;
+	}
+	
+	public ConfigManager noCache()
+	{
+		cachesValues = false;
+		return this;
 	}
 	
 	@Override

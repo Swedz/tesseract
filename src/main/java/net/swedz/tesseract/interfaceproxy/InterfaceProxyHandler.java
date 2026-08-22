@@ -11,7 +11,8 @@ import java.util.Optional;
 
 public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> implements InvocationHandler
 {
-	private Map<Method, E> values = Map.of();
+	private Map<Method, E> values  = Map.of();
+	private List<E>        entries = List.of();
 	
 	public Optional<Comparator<E>> sorter()
 	{
@@ -21,6 +22,11 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 	protected abstract Optional<E> generate(Class<?> proxyClass, Object proxy, Method method);
 	
 	public final List<E> entries()
+	{
+		return entries;
+	}
+	
+	private List<E> sortEntries(Map<Method, E> values)
 	{
 		var stream = values.values().stream();
 		stream = this.sorter()
@@ -45,6 +51,12 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 		}
 		
 		this.values = Collections.unmodifiableMap(values);
+		this.entries = this.sortEntries(values);
+	}
+	
+	protected final E getEntry(Method method)
+	{
+		return values.get(method);
 	}
 	
 	private static final Method METHOD_EQUALS, METHOD_HASHCODE, METHOD_TOSTRING;
@@ -79,7 +91,7 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 			return proxy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
 		}
 		
-		var value = values.get(method);
+		var value = this.getEntry(method);
 		if(value == null)
 		{
 			try
