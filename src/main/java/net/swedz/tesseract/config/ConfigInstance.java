@@ -25,4 +25,9 @@ public record ConfigInstance<C>(
 		InterfaceProxyInstance.super.load();
 		return this;
 	}
+	
+	public void resetCache()
+	{
+		handler.resetCache();
+	}
 }
