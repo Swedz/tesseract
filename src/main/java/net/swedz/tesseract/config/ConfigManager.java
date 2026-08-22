@@ -23,7 +23,7 @@ public final class ConfigManager extends InterfaceProxyManager.WithArgument<Conf
 		return cachesValues;
 	}
 	
-	public ConfigManager noCache()
+	public ConfigManager withoutCaching()
 	{
 		cachesValues = false;
 		return this;
