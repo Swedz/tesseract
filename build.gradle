@@ -2,6 +2,7 @@ plugins {
     id 'java-library'
     id 'idea'
     id 'maven-publish'
+    id 'net.swedz.deploy-inator' version '1.0.1'
 }
 
 version = (System.getenv("VERSION") ?: "0.0.0-local")
