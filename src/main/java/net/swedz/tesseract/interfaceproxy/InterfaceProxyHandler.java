@@ -54,11 +54,6 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 		this.entries = this.sortEntries(values);
 	}
 	
-	protected final E getEntry(Method method)
-	{
-		return values.get(method);
-	}
-	
 	private static final Method METHOD_EQUALS, METHOD_HASHCODE, METHOD_TOSTRING;
 	
 	static
@@ -91,7 +86,7 @@ public abstract class InterfaceProxyHandler<E extends InterfaceProxyEntry<?>> im
 			return proxy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
 		}
 		
-		var value = this.getEntry(method);
+		var value = values.get(method);
 		if(value == null)
 		{
 			try
