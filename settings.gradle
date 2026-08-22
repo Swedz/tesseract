@@ -1,1 +1,16 @@
+pluginManagement {
+	repositories {
+		mavenLocal()
+		gradlePluginPortal()
+		maven {
+			name = "Modmaven"
+			url "https://modmaven.dev"
+			content {
+				includeGroup "net.swedz"
+				includeGroup "net.swedz.deploy-inator"
+			}
+		}
+	}
+}
+
 rootProject.name = 'tesseract'
